@@ -41,6 +41,10 @@ int kaskada::kaskadaevent()
     for(int i=1;i< e->in.size();i++)
       nucl->remove_nucleon(e->in[i]); // ignores nonnucleons
   }
+  else
+  {
+    nucl->remove_nucleon(e->out[0]);
+  }
       
   if(not par.kaskada_on)  // skip the cascade if it is turn off in params,
                           // but make sure about the energy balance
