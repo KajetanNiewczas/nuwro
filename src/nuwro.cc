@@ -228,6 +228,7 @@ void NuWro::makeevent(event* e, params &p)
 	{
 								 // insert target nucleon
 		e->in.push_back (_nucleus->get_nucleon());
+		e->in[1].set_proton();
 		e->in[0].r=e->in[1].r;
 		assert(e->in[1]*e->in[1]>0);
 	}
