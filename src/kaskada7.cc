@@ -168,8 +168,15 @@ interaction_parameters kaskada::prepare_interaction()
 
   res.xsec = res.dens_n*res.xsec_n + res.dens_p*res.xsec_p; // calculate the inverse of the mean free path
 
-  res.xsec /= par.kaskada_meanfreepath_scale;               // scale the mean free path (1/res.xsec)
-                                                            // according to the params
+  if(par.kaskada_meanfreepath_fit)               // scale the mean free path (1/res.xsec)
+  {
+    res.xsec /= meanfreepath_scale_from_fit();   // momentum dependent fit
+  }
+  else                                           // "0" is default
+  {
+    res.xsec /= par.kaskada_meanfreepath_scale;  // constant value from params
+  }
+
   assert(res.xsec>=0);
 
   if (res.xsec != 0)
@@ -181,6 +188,55 @@ interaction_parameters kaskada::prepare_interaction()
     res.freepath = 2.0 * max_step;
 
   return res;
+}
+
+////////////////////////////////////////
+
+double kaskada::meanfreepath_scale_from_fit()
+{
+  double particle_momentum = p->momentum();
+
+  switch(par.kaskada_meanfreepath_fit)
+  {
+    case 1:                                      // fit to available transparency data
+      if(particle_momentum > 1700)
+      {
+        return 1.35;
+      }
+      else if(particle_momentum > 902)
+      {
+        return 0.00051378 * particle_momentum + 0.47656642;
+      }
+      else if(particle_momentum > 625)
+      {
+        return -0.00021661 * particle_momentum + 1.13537906;
+      }
+      else
+      {
+        return 1;
+      }
+      break;
+
+    case 2:                                      // fit to available transparency data
+                                                 // without the c_a factors
+      if(particle_momentum > 1650)
+      {
+        return 1.05;
+      }
+      else if(particle_momentum > 927)
+      {
+        return 0.00049793 * particle_momentum + 0.22842324;
+      }
+      else if(particle_momentum > 625)
+      {
+        return -0.00102649 * particle_momentum + 1.64155629;
+      }
+      else
+      {
+        return 1;
+      }
+      break;
+  }
 }
 
 ////////////////////////////////////////
