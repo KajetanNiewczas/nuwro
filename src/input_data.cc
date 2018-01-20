@@ -6,28 +6,28 @@
 #include <math.h>
 
 #include "dirs.h"
+#include "jednostki.h"
 
 
 ////////////////////////////////////////
 // Public methods
 ////////////////////////////////////////
 
-input_data::input_data( params _par )
+input_data::input_data()
 {
-  par = _par;
 }
 
 ////////////////////////////////////////
 
 input_data::~input_data()
 {
-  delete cascade_xsec_NN;
 }
 
 ////////////////////////////////////////
 
-void input_data::initialize()
+void input_data::initialize( params _par )
 {
+  par = _par;
   initialize_input_path();
   initialize_data_containers();
 }
@@ -36,7 +36,15 @@ void input_data::initialize()
 
 void input_data::load_data()
 {
-  cascade_xsec_NN->read_data_file();
+  for( int i = 0; i < containers.size(); i++ )
+    containers[i].read_data_file();
+}
+
+////////////////////////////////////////
+
+data_container* input_data::get_data_container( int i )
+{
+  return &containers[i];
 }
 
 
@@ -48,7 +56,7 @@ void input_data::initialize_input_path()
 {
   // generate the input_path
   stringstream name_sstream;
-  name_sstream << get_data_dir() << "input/"; // data_dir + relative folder
+  name_sstream << get_data_dir() << "input/";   // data_dir + relative folder
   input_path = name_sstream.str();
 
   // check if the directory exists
@@ -67,32 +75,33 @@ void input_data::initialize_input_path()
 
 void input_data::initialize_data_containers()
 {
-  // Provide  the parameter that governs the data,
-  // then the number of different fields in the file, their names and the method of interpolation for each.
+  // Provide the parameter that governs the data,
+  // then the number of different fields in the file, their names and the method of interpolation:
+  //  0 is taking floor,
+  //  1 is linear interpolation,
+  // -1 means it is the input axis.
 
-    string cascade_xsec_NN_file_name         = generate_file_name( "kaskada_xsec_NN", par.kaskada_xsec_NN );
-    int cascade_xsec_NN_number_of_fields     = 10;
-    string cascade_xsec_NN_data_fields[]     = {"energy",
-                                                "xsec_ii", "xsec_ij",
-                                                "inel_ii", "inel_ij", "inel_1pi",
-                                                "angle_A_ii", "angle_A_ij", "angle_B_ii","angle_B_ij"};
-    int cascade_xsec_NN_interpolate_fields[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    cascade_xsec_NN = new data_container( cascade_xsec_NN_file_name, cascade_xsec_NN_number_of_fields,
-                                          cascade_xsec_NN_data_fields, cascade_xsec_NN_interpolate_fields );
-}
+    int    cascade_NN_xsec_number_of_fields     = 3;
+    string cascade_NN_xsec_data_fields[]        = {"energy", "xsec_ii", "xsec_ij"};
+    int    cascade_NN_xsec_interpolate_fields[] = {-1, 1, 1};
+    double cascade_NN_xsec_unit_fields[]        = { 1, millibarn, millibarn};
+    containers.push_back( data_container( input_path, "kaskada_NN_xsec", par.kaskada_NN_xsec,
+                                          cascade_NN_xsec_number_of_fields, cascade_NN_xsec_data_fields,
+                                          cascade_NN_xsec_interpolate_fields, cascade_NN_xsec_unit_fields ));
 
-////////////////////////////////////////
+    int    cascade_NN_inel_number_of_fields     = 5;
+    string cascade_NN_inel_data_fields[]        = {"energy", "inel_ii", "inel_ij", "inel_1pii", "inel_1pij"};
+    int    cascade_NN_inel_interpolate_fields[] = {-1, 0, 0, 0, 0};
+    double cascade_NN_inel_unit_fields[]        = { 1, 1, 1, 1, 1};
+    containers.push_back( data_container( input_path, "kaskada_NN_inel", par.kaskada_NN_inel,
+                                          cascade_NN_inel_number_of_fields, cascade_NN_inel_data_fields,
+                                          cascade_NN_inel_interpolate_fields, cascade_NN_inel_unit_fields ));
 
-string input_data::generate_file_name( string parameter_name, int parameter_option )
-{
-  if ( parameter_option < 2 )  // ckeck if the parameter is ok, it should be read from params, hardcoded for now
-  {
-    stringstream name_sstream;
-    name_sstream << input_path << parameter_name << "_" << parameter_option << ".dat"; // path + name + extension
-    return name_sstream.str();
-  }
-  else
-  {
-    throw "input_data error: Invalid parameter.";
-  }
+    int    cascade_NN_angle_number_of_fields    = 5;
+    string cascade_NN_angle_data_fields[]       = {"energy", "angle_A_ii", "angle_A_ij", "angle_B_ii","angle_B_ij"};
+    int    cascade_NN_angle_interpolate_fields[]= {-1, 0, 0, 0, 0};
+    double cascade_NN_angle_unit_fields[]       = { 1, 1, 1, 1, 1};
+    containers.push_back( data_container( input_path, "kaskada_NN_angle", par.kaskada_NN_angle,
+                                          cascade_NN_angle_number_of_fields, cascade_NN_angle_data_fields,
+                                          cascade_NN_angle_interpolate_fields, cascade_NN_angle_unit_fields ));
 }
