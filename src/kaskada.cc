@@ -6,18 +6,31 @@
 #include "args.h"
 #include "nucleusmaker.h"
 #include "dirs.h"
+#include "input_data.h"
 
 int main(int argc,  char** argv)
-{  
-  set_dirs(argv[0]);	
+{
+  set_dirs(argv[0]);
   args a("kaskada","kaskada.txt","kaskada.root");
-  a.read(argc,argv);   
+  a.read(argc,argv);
   params p;
   p.read(a.input);
   p.read(a.params,"Command line");
   p.list();
   frandom_init(p.random_seed);
   
+  input_data input_test( p );
+  try
+  {
+    input_test.initialize();
+    input_test.load_data();
+  }
+  catch( char const* ex )
+  {
+    cout << ex << endl;
+    return 1;
+  }
+
   event *e=new event;
   TFile *f= new TFile(a.output,"recreate");
   TTree * t2=new TTree("treeout","Tree of events");
@@ -56,14 +69,13 @@ int main(int argc,  char** argv)
      k.kaskadaevent();
      t2->Fill();
      delete e;
-     cout<<"event "<<i<<": completed.\r"; 
-
+     cout<<"event "<<i<<": completed.\r";
   }
-  
+
   f->Write();
   delete nucl;
   delete t2;
   delete f;
-  genrand_write_state(); 
+  genrand_write_state();
   return 0;
 }
